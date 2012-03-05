@@ -66,7 +66,7 @@ Connections copyConnections (
 
 /* ========================================================================== */
 
-static double distance (
+static double averageDistance (
     KHNNet self, unsigned x, unsigned y, const double input[]
 ) {
     int i;
@@ -76,6 +76,13 @@ static double distance (
         distance += pow(input[i] - self->grid[i][x][y], 2.0);
 
     return distance;
+}
+
+static double distance (
+    unsigned x_i, unsigned y_i,
+    unsigned x_j, unsigned y_j
+) {
+    return sqrt(pow((float) x_i - x_j, 2.0) + pow((float) y_i - y_j, 2.0));
 }
 
 /* ========================================================================== */
@@ -138,7 +145,7 @@ KHNResult_ST khnGetResult (KHNNet self, const double input[]) {
 
     for (i = 0; i < self->height; i ++)
         for (j = 0; j < self->width; j ++) {
-            cur_distance += distance(self, i, j, input);
+            cur_distance += averageDistance(self, i, j, input);
 
             if (cur_distance < min_distance) {
                 result.x = j;
@@ -179,7 +186,9 @@ KHNTraining khnNewTraining (
         malloc(sizeof(struct KHNTraining_ST));
 
     training_return->cur_iter = 0;
-    training_return->neighbourhood = larning_rate;
+    training_return->net = net;
+    training_return->neighbourhood = neighbourhood;
+    training_return->larning_rate = larning_rate;
     training_return->time_const = time_const;
 
     return training_return;
@@ -195,14 +204,14 @@ KHNTraining khnCopyTraining (const KHNTraining self) {
         self->net, self->neighbourhood, self->larning_rate, self->time_const
     );
 
-    copt->cur_iter = self->cur_iter;
+    copy->cur_iter = self->cur_iter;
 
     return copy;
 }
 
-KHNTraining khnCopyTraining (KHNTraining self, double input[]) {
+KHNResult_ST khnTrainingIterate (KHNTraining self, const double input[]) {
     int i, j, k;
-    double adjustment;
+    double adjustment, larning_f, neighbourhood_f;
     KHNResult_ST result = khnGetResult(self->net, input);
 
     self->cur_iter ++;
@@ -215,14 +224,20 @@ KHNTraining khnCopyTraining (KHNTraining self, double input[]) {
 
                 neighbourhood_f = exp(
                     pow(distance(result.x, result.y, k, j), 2.0) /
-                    2.0 * (self->neighbourhood *
-                        exp((double) self->cur_iter / self->time_const)
-                    )
+                    2.0 * pow(
+                        self->neighbourhood *
+                        exp((double) self->cur_iter / self->time_const),
+                    2.0)
                 );
 
                 adjustment = larning_f * neighbourhood_f *
                     (input[i] - self->net->grid[i][j][k]);
+
+                self->net->grid[i][j][k] += adjustment;
             }
+
+
+    return result;
 }
 
 /* ========================================================================== */

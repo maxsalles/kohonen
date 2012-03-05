@@ -48,7 +48,7 @@ void khnDestroyTraining (KHNTraining* self_p);
 
 KHNTraining khnCopyTraining (const KHNTraining self);
 
-KHNTraining khnTrainingIterate (KHNTraining self, double input[]);
+KHNResult_ST khnTrainingIterate (KHNTraining self, const double input[]);
 
 /* ========================================================================== */
 

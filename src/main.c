@@ -2,14 +2,15 @@
 #include "kohonen.h"
 
 int main (void) {
-    double input[] = { 2.0 };
-    KHNNet net = khnNew(2, 2, 1);
-    KHNResult_ST result;
+    double input[] = { 2.0, 2.0 };
+    KHNNet net = khnNew(2, 2, 2);
+    KHNTraining training = khnNewTraining(net, 0.5, 0.5, 4.0);
 
     khnPrint(net);
-    result = khnGetResult(net, input);
 
-    printf("(%i, %i, %f)", result.x, result.y, result.distance);
+    khnTrainingIterate(training, input);
+
+    khnPrint(net);
 
     return 0;
 }
