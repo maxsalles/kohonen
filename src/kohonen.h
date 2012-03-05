@@ -37,5 +37,20 @@ void khnPrint (const KHNNet self);
 
 /* ========================================================================== */
 
+KHNTraining khnNewTraining (
+    KHNNet net,
+    double neighbourhood,
+    double larning_rate,
+    double time_const
+);
+
+void khnDestroyTraining (KHNTraining* self_p);
+
+KHNTraining khnCopyTraining (const KHNTraining self);
+
+KHNTraining khnTrainingIterate (KHNTraining self, double input[]);
+
+/* ========================================================================== */
+
 #endif
 

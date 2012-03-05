@@ -18,6 +18,13 @@
 
 typedef double** Connections;
 
+struct KHNTraining_ST {
+    KHNNet net;
+    unsigned cur_iter;
+    double neighbourhood, larning_rate, time_const;
+};
+
+
 struct KHNNet_ST {
     unsigned width, height, input_len;
     Connections* grid;
@@ -158,6 +165,64 @@ void khnPrint (const KHNNet self) {
             puts("");
         }
     }
+}
+
+/* ========================================================================== */
+
+KHNTraining khnNewTraining (
+    KHNNet net,
+    double neighbourhood,
+    double larning_rate,
+    double time_const
+) {
+    KHNTraining training_return = (KHNTraining)
+        malloc(sizeof(struct KHNTraining_ST));
+
+    training_return->cur_iter = 0;
+    training_return->neighbourhood = larning_rate;
+    training_return->time_const = time_const;
+
+    return training_return;
+}
+
+void khnDestroyTraining (KHNTraining* self_p) {
+    free(*self_p);
+    *self_p = NULL;
+}
+
+KHNTraining khnCopyTraining (const KHNTraining self) {
+    KHNTraining copy = khnNewTraining(
+        self->net, self->neighbourhood, self->larning_rate, self->time_const
+    );
+
+    copt->cur_iter = self->cur_iter;
+
+    return copy;
+}
+
+KHNTraining khnCopyTraining (KHNTraining self, double input[]) {
+    int i, j, k;
+    double adjustment;
+    KHNResult_ST result = khnGetResult(self->net, input);
+
+    self->cur_iter ++;
+
+    for (i = 0; i < self->net->input_len; i ++)
+        for (j = 0; j < self->net->height; j ++)
+            for (k = 0; k < self->net->width; k ++) {
+                larning_f = self->larning_rate *
+                    exp((double) self->cur_iter / self->time_const);
+
+                neighbourhood_f = exp(
+                    pow(distance(result.x, result.y, k, j), 2.0) /
+                    2.0 * (self->neighbourhood *
+                        exp((double) self->cur_iter / self->time_const)
+                    )
+                );
+
+                adjustment = larning_f * neighbourhood_f *
+                    (input[i] - self->net->grid[i][j][k]);
+            }
 }
 
 /* ========================================================================== */
