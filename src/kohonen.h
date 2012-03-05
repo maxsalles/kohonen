@@ -14,7 +14,7 @@ typedef struct KHNNet_ST* KHNNet;
 
 /* ========================================================================== */
 
-KHNNet khnNew (unsigned width, unsigned height);
+KHNNet khnNew (unsigned width, unsigned height, unsigned input_len);
 
 void khnDestroy (KHNNet* self_p);
 
