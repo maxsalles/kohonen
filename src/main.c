@@ -2,13 +2,14 @@
 #include "kohonen.h"
 
 int main (void) {
-    KHNNet net = khnNew(10, 10, 2);
-    KHNNet net_copy = khnCopy(net);
+    double input[] = { 2.0 };
+    KHNNet net = khnNew(2, 2, 1);
+    KHNResult_ST result;
 
     khnPrint(net);
-    khnPrint(net_copy);
+    result = khnGetResult(net, input);
 
-    khnDestroy(&net);
+    printf("(%i, %i, %f)", result.x, result.y, result.distance);
 
     return 0;
 }

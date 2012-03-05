@@ -10,6 +10,15 @@
 
 struct KHNNet_ST;
 
+struct KHNTraining_ST;
+
+typedef struct {
+    int x, y;
+    double distance;
+} KHNResult_ST;
+
+typedef struct KHNTraining_ST* KHNTraining;
+
 typedef struct KHNNet_ST* KHNNet;
 
 /* ========================================================================== */
@@ -21,6 +30,8 @@ void khnDestroy (KHNNet* self_p);
 KHNNet khnCopy (KHNNet self);
 
 void khnClear (KHNNet self);
+
+KHNResult_ST khnGetResult (KHNNet self, const double input[]);
 
 void khnPrint (const KHNNet self);
 

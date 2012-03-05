@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
+#include <float.h>
 
 #include "kohonen.h"
 
@@ -53,6 +55,20 @@ Connections copyConnections (
             copy[i][j] = connections[i][j];
 
     return copy;
+}
+
+/* ========================================================================== */
+
+static double distance (
+    KHNNet self, unsigned x, unsigned y, const double input[]
+) {
+    int i;
+    double distance = 0.0;
+
+    for (i = 0; i < self->input_len; i ++)
+        distance += pow(input[i] - self->grid[i][x][y], 2.0);
+
+    return distance;
 }
 
 /* ========================================================================== */
@@ -108,6 +124,28 @@ void khnClear (KHNNet self) {
                 self->grid[i][j][k] = (double) rand() / (double) RAND_MAX;
 }
 
+KHNResult_ST khnGetResult (KHNNet self, const double input[]) {
+    int i, j;
+    KHNResult_ST result;
+    double cur_distance = 0.0, min_distance = (double) FLT_MAX;
+
+    for (i = 0; i < self->height; i ++)
+        for (j = 0; j < self->width; j ++) {
+            cur_distance += distance(self, i, j, input);
+
+            if (cur_distance < min_distance) {
+                result.x = j;
+                result.y = i;
+                result.distance = cur_distance;
+                min_distance = cur_distance;
+            }
+
+            cur_distance = 0.0;
+        }
+
+    return result;
+}
+
 void khnPrint (const KHNNet self) {
     int i, j, k;
 
@@ -123,7 +161,6 @@ void khnPrint (const KHNNet self) {
 }
 
 /* ========================================================================== */
-
 
 #endif
 
