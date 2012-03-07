@@ -1,5 +1,8 @@
 #include <stdio.h>
-#include "kohonen.h"
+
+
+#include "lst/list.h"
+#include "khn/kohonen.h"
 
 int main (void) {
     double input[] = { 2.0, 2.0 };
