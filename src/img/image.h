@@ -1,0 +1,98 @@
+/*
+** $ Herond Robaina Salles, Rafael Motta de Carvalho
+** Prefix: img
+*/
+
+#ifndef _IMG_LIB
+#define _IMG_LIB
+
+#include <errno.h>
+
+#include "jpeglib.h"
+#include "GL/glut.h"
+
+#include "../lst/list.h"
+#include "../clr/color.h"
+
+/* ========================================================================== */
+
+enum IMGErros_EN {
+    IMG_NO_ERROR = 0,
+    IMG_NOT_ENOUGH_SPACE = ENOMEM,
+    IMG_INVALID_ARGUMENT = EINVAL
+};
+
+enum IMGRescalingMethods_EN {
+    IMG_BICUBIC = 0
+};
+
+struct IMGImage_ST;
+
+typedef struct IMGImage_ST* IMGImage;
+
+/* ========================================================================== */
+
+IMGImage imgLoadJPG (const char* file_name);
+
+IMGImage imgAlloc (
+    unsigned width, unsigned height,
+    RGBColor_ST background
+);
+
+IMGImage imgCopy (const IMGImage self);
+
+void imgDestroy (IMGImage* self_p);
+
+void imgSetColorPixel (
+    IMGImage self,
+    unsigned x, unsigned y,
+    RGBColor_ST color
+);
+
+RGBColor_ST imgGetColorPixel (const IMGImage self, unsigned x, unsigned y);
+
+int imgGetWidth (const IMGImage self);
+
+int imgGetHeight (const IMGImage self);
+
+int imgGetNumPixels (const IMGImage self);
+
+LSTList imgGetJaxColors (
+    const IMGImage self,
+    unsigned jump_size,
+    double tolerance
+);
+
+LSTList imgGetKmeansColors (
+    const IMGImage self,
+    unsigned num_colors,
+    unsigned max_iter,
+    double tolerance
+);
+
+IMGImage imgGetSector (
+    const IMGImage self,
+    int x, int y,
+    unsigned width, unsigned height
+);
+
+void imgSubtract (IMGImage self, const IMGImage other_image);
+
+void imgDesaturate (IMGImage self);
+
+void imgQuantize (IMGImage self, const LSTList colors);
+
+void imgThresholded (IMGImage self, double threshold);
+
+void imgApplyGaussianBlur (IMGImage self, unsigned width, unsigned height);
+
+void imgApplySobelEdgeDetection (IMGImage self);
+
+RGBColor_ST imgApplyConvolutionFilter (const IMGImage self, double** filter);
+
+void imgDraw (const IMGImage self, unsigned x, unsigned y);
+
+/* ========================================================================== */
+
+#endif
+

@@ -3,6 +3,7 @@
 
 #include "lst/list.h"
 #include "khn/kohonen.h"
+#include "img/image.h"
 
 int main (void) {
     double input[] = { 2.0, 2.0 };

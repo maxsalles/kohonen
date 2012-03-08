@@ -1,5 +1,5 @@
 /*
-** $ Herond Robaina Salles, 2012
+** $ Herond Robaina Salles
 ** Prefix: khn
 */
 

@@ -24,13 +24,13 @@ enum LSTErros_EN {
 
 struct LSTList_ST;
 
-typedef struct LSTList_ST* CLSTList;
+typedef struct LSTList_ST* LSTList;
 
 /* ========================================================================== */
 
-CLSTList lstNew (void);
+LSTList lstNew (void);
 
-CLSTList lstCopy (const LSTList self);
+LSTList lstCopy (const LSTList self);
 
 void lstClear (LSTList self);
 
@@ -54,7 +54,7 @@ void* lstGetElement (LSTList self, unsigned pos);
 
 void* lstGetLastElement (LSTList self);
 
-void* lstGetFirstElement (CLSTList self);
+void* lstGetFirstElement (LSTList self);
 
 void lstReverse (LSTList self);
 

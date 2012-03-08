@@ -15,25 +15,25 @@
 
 /* ========================================================================== */
 
-int clst_current_error = CLST_NO_ERROR;
+int lst_current_error = LST_NO_ERROR;
 
 /* ========================================================================== */
 
-struct CLSTNode_ST {
+struct LSTNode_ST {
     void* elem_p;
-    struct CLSTNode* next;
-    struct CLSTNode* previous;
+    struct LSTNode_ST* next;
+    struct LSTNode_ST* previous;
 };
 
-struct CLSTList_ST {
+struct LSTList_ST {
     unsigned size;
-    struct CLSTNode* first;
-    struct CLSTNode* last;
+    struct LSTNode_ST* first;
+    struct LSTNode_ST* last;
 };
 
 /* ========================================================================== */
 
-static struct CLSTNode_ST* clstGetNode (LSTList self, unsigned pos) {
+static struct LSTNode_ST* lstGetNode (LSTList self, unsigned pos) {
     struct LSTNode_ST* node_p = NULL;
 
     if (self && (pos < self->size)) {
@@ -51,19 +51,19 @@ static struct CLSTNode_ST* clstGetNode (LSTList self, unsigned pos) {
 
 /* ========================================================================== */
 
-LSTList clstNew (void) {
+LSTList lstNew (void) {
     LSTList list_return = (LSTList) malloc(sizeof(struct LSTList_ST));
 
     if (list_return) {
         list_return->size = 0;
         list_return->first = NULL;
         list_return->last = NULL;
-    } else clst_current_error = LST_NOT_ENOUGH_SPACE;
+    } else lst_current_error = LST_NOT_ENOUGH_SPACE;
 
     return list_return;
 }
 
-LSTList clstCopy (const LSTList self) {
+LSTList lstCopy (const LSTList self) {
     if (self) {
         int i;
         LSTList list_return = lstNew();
@@ -102,7 +102,7 @@ void lstAppend (LSTList self, void* elem_p) {
 
         if (node_p) {
             node_p->next = NULL;
-            node_p->previous = list->last;
+            node_p->previous = self->last;
             node_p->elem_p = elem_p;
 
             if (self->last) self->last->next = node_p;
@@ -120,7 +120,7 @@ void lstInject (LSTList self, void *elem_p) {
         );
 
         if (node_p) {
-            node_p->next = list->first;
+            node_p->next = self->first;
             node_p->previous = NULL;
             node_p->elem_p = elem_p;
 
@@ -131,15 +131,15 @@ void lstInject (LSTList self, void *elem_p) {
     } else lst_current_error = LST_INVALID_ARGUMENT;
 }
 
-void lstInsert (LSTList self, unsigned pos, void* self_p) {
+void lstInsert (LSTList self, unsigned pos, void* elem_p) {
     struct LSTNode_ST* node_p = NULL;
 
     if (self && elem_p && (pos < self->size)) {
-        if (pos == self->size - 1) clstAppend(self, elem_p);
-        else if (pos == 0) clstInject(self, elem_p);
+        if (pos == self->size - 1) lstAppend(self, elem_p);
+        else if (pos == 0) lstInject(self, elem_p);
         else {
-            node_p = (struct LSTNode_ST*) malloc(sizeof(struct CLSTNode_ST));
-            struct LSTNode_ST* curr_node_p = clstGetNode(self, pos);
+            node_p = (struct LSTNode_ST*) malloc(sizeof(struct LSTNode_ST));
+            struct LSTNode_ST* curr_node_p = lstGetNode(self, pos);
 
             if (node_p) {
                 node_p->next = curr_node_p;
@@ -170,7 +170,7 @@ void* lstLookElement (const LSTList self, unsigned pos) {
 }
 
 void* lstLookLastElement (const LSTList self) {
-    if (self && self->size) return list->last->elem_p;
+    if (self && self->size) return self->last->elem_p;
     lst_current_error = LST_INVALID_ARGUMENT;
 
     return NULL;
@@ -191,10 +191,10 @@ void* lstGetElement (LSTList self, unsigned pos) {
             struct LSTNode_ST* node_p = lstGetNode(self, pos);
             void* elem_p = node_p->elem_p;
 
-            node->previous->next = node_p->next;
-            node->next->previous = node_p->previous;
-            list->size --;
-            free(node);
+            node_p->previous->next = node_p->next;
+            node_p->next->previous = node_p->previous;
+            self->size --;
+            free(node_p);
 
             return elem_p;
         }
@@ -208,9 +208,9 @@ void* lstGetElement (LSTList self, unsigned pos) {
 void* lstGetLastElement (LSTList self) {
     if (self && self->size) {
         struct LSTNode_ST* last_node_p = self->last;
-        void* elem_p = list->last->elem_p;
+        void* elem_p = self->last->elem_p;
 
-        if (list->last->previous) self->last->previous->next = NULL;
+        if (self->last->previous) self->last->previous->next = NULL;
         else self->first = NULL;
         self->last = self->last->previous;
         self->size --;
@@ -269,7 +269,7 @@ LSTList lstSearch (
     if (self && elem_comp_p) {
         int i;
         struct LSTNode_ST* node_p = NULL;
-        LSTList list_return = clstNew();
+        LSTList list_return = lstNew();
 
         comparator = comparator ? comparator : LST_DEFAULT_COMPARATOR;
 
@@ -319,10 +319,10 @@ int lstGetError (void) {
     return error_return;
 }
 
-void clstPrint (const CLSTList self) {
+void lstPrint (const LSTList self) {
     if (self) {
         int i = 0;
-        struct LSTNode* node_p = NULL;
+        struct LSTNode_ST* node_p = NULL;
 
         for (node_p = self->first; i < self->size; node_p = node_p->next, i ++)
             printf("%i:%p ", i, node_p->elem_p);
