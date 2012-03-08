@@ -1,11 +1,11 @@
 /*
 **
 ** $ Herond Robaina Salles, Rafael Motta de Carvalho
-** prefix: rgba
+** Prefix: rgb
 */
 
-#ifndef _RGBA_IMP
-#define _RGBA_IMP
+#ifndef _RGB_IMP
+#define _RGB_IMP
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,168 +15,153 @@
 
 /* ========================================================================== */
 
-static int current_error = RGBA_NO_ERROR;
+static int rgb_current_error = RGB_NO_ERROR;
 
 /* ========================================================================== */
 
-RGBAColor_ST rgbaSet3b (
+RGBColor_ST rgbSet (
     unsigned char red,
     unsigned char green,
     unsigned char blue
 ) {
-    RGBAColor_ST color_return = { red, green, blue, 255 };
+    RGBColor_ST color_return = { red, green, blue };
 
     return color_return;
 };
 
-RGBAColor_ST rgbaSet4b (
-    unsigned char red,
-    unsigned char green,
-    unsigned char blue,
-    unsigned char alpha
-) {
-    RGBAColor_ST color_return = { red, green, blue, alpha };
+RGBColor_ST* rgbAlloc (RGBColor_ST self) {
+    RGBColor_ST* color_p = (RGBColor_ST*) malloc(sizeof(RGBColor_ST));
 
-    return color_return;
-};
+    if (color_p) {
+        color_p->red = self.red;
+        color_p->green = self.green;
+        color_p->blue = self.blue;
+    } else rgb_current_error = RGB_NOT_ENOUGH_SPACE;
 
-RGBAColor_ST* rgbaAlloc (RGBAColor_ST color) {
-    RGBAColor_ST* color_ptr_return = (RGBAColor_ST*) malloc(
-        sizeof(RGBAColor_ST)
-    );
-
-    if (color_ptr_return) {
-        color_ptr_return->red = color.red;
-        color_ptr_return->green = color.green;
-        color_ptr_return->blue = color.blue;
-        color_ptr_return->alpha = color.alpha;
-    } else current_error = RGBA_NOT_ENOUGH_SPACE;
-
-    return color_ptr_return;
+    return color_p;
 }
 
-double rgbaGetDiameter (RGBAColor_ST color) {
+double rgbGetDiameter (RGBColor_ST self) {
     return sqrt(
-        pow((double) color.red, 2.0) +
-        pow((double) color.green, 2.0) +
-        pow((double) color.blue, 2.0)
+        pow((double) self.red, 2.0) +
+        pow((double) self.green, 2.0) +
+        pow((double) self.blue, 2.0)
     );
 }
 
-double rgbaGetDistance (RGBAColor_ST color1, RGBAColor_ST color2) {
+double rgbGetDistance (RGBColor_ST self, RGBColor_ST color) {
     return sqrt(
-        pow((double) (color1.red - color2.red), 2.0) +
-        pow((double) (color1.green - color2.green), 2.0) +
-        pow((double) (color1.blue - color2.blue), 2.0)
+        pow((double) (self.red - color.red), 2.0) +
+        pow((double) (self.green - color.green), 2.0) +
+        pow((double) (self.blue - color.blue), 2.0)
     );
 }
 
-RGBAColor_ST rgbaGetCloser (RGBAColor_ST color, const CLSTList colors) {
+RGBColor_ST rgbGetCloser (RGBColor_ST self, const LSTList colors) {
     int i;
-    RGBAColor_ST current_color;
-    RGBAColor_ST color_return = * (RGBAColor_ST*) clstLookElement(colors, 0);
-    double shortest_distance = rgbaGetDistance(color, color_return);
-    double current_distance = 0.0;
+    RGBColor_ST curr_color;
+    RGBColor_ST color_return = * (RGBColor_ST*) lstLookElement(colors, 0);
+    double shortest_distance = rgbGetDistance(self, color_return);
+    double curr_distance = 0.0;
 
-    for (i = 1; i < clstGetLength(colors); i++) {
-        current_color = * (RGBAColor_ST*) clstLookElement(colors, i);
-        current_distance = rgbaGetDistance(color, current_color);
+    for (i = 1; i < lstGetLength(colors); i ++) {
+        curr_color = * (RGBColor_ST*) lstLookElement(colors, i);
+        curr_distance = rgbGetDistance(self, curr_color);
 
-        if (current_distance < shortest_distance) {
-            shortest_distance = current_distance;
-            color_return = current_color;
+        if (curr_distance < shortest_distance) {
+            shortest_distance = curr_distance;
+            color_return = curr_color;
         }
     }
 
     return color_return;
 }
 
-double rgbaGetSimilarityOnColorsSet (
-    RGBAColor_ST color,
-    const CLSTList colors,
-    RGBAColor_ST* color_p
+double rgbGetSimilarityOnColorsSet (
+    RGBColor_ST self,
+    const LSTList colors,
+    RGBColor_ST* color_p
 ) {
     int i;
-    RGBAColor_ST current_color = * (RGBAColor_ST*) clstLookElement(colors, 0);
-    RGBAColor_ST color_aux;
-    double shortest_distance = rgbaGetDistance(color, current_color);
-    double current_distance = rgbaGetDistance(color, current_color);
+    RGBColor_ST curr_color = * (RGBColor_ST*) lstLookElement(colors, 0);
+    RGBColor_ST color_aux;
+    double shortest_distance = rgbGetDistance(self, curr_color);
+    double curr_distance = rgbGetDistance(self, curr_color);
 
-    for (i = 1; i < clstGetLength(colors); i ++) {
-        current_color = * (RGBAColor_ST*) clstLookElement(colors, i);
-        current_distance = rgbaGetDistance(color, current_color);
+    for (i = 1; i < lstGetLength(colors); i ++) {
+        curr_color = * (RGBColor_ST*) lstLookElement(colors, i);
+        curr_distance = rgbGetDistance(self, curr_color);
 
-        if (current_distance < shortest_distance) {
-            shortest_distance = current_distance;
-            color_aux = current_color;
+        if (curr_distance < shortest_distance) {
+            shortest_distance = curr_distance;
+            color_aux = curr_color;
             if (color_p) {
-                color_p->red = current_color.red;
-                color_p->green = current_color.green;
-                color_p->blue = current_color.blue;
-                color_p->alpha = current_color.alpha;
+                color_p->red = curr_color.red;
+                color_p->green = curr_color.green;
+                color_p->blue = curr_color.blue;
             }
         }
     }
 
-    return 1.0 - (shortest_distance / rgbaGetDiameter(RGBA_WHITE));
+    return 1.0 - (shortest_distance / rgbGetDiameter(RGB_WHITE));
 }
 
-RGBAColor_ST rgbaBlend (RGBAColor_ST color1, RGBAColor_ST color2) {
-    return rgbaSet3b(
-        (color1.red + color2.red) / 2,
-        (color1.green + color2.green) / 2,
-        (color1.blue + color2.blue) / 2
+RGBColor_ST rgbBlend (RGBColor_ST self, RGBColor_ST color) {
+    return rgbSet(
+        (self.red + color.red) / 2,
+        (self.green + color.green) / 2,
+        (self.blue + color.blue) / 2
     );
 }
 
-RGBAColor_ST rgbaSum (RGBAColor_ST color1, RGBAColor_ST color2) {
-    return rgbaSet3b(
-        color1.red + color2.red,
-        color1.green + color2.green,
-        color1.blue + color2.blue
+RGBColor_ST rgbSum (RGBColor_ST self, RGBColor_ST color) {
+    return rgbSet(
+        self.red + color.red,
+        self.green + color.green,
+        self.blue + color.blue
     );
 }
 
-RGBAColor_ST rgbaSub (RGBAColor_ST color1, RGBAColor_ST color2) {
-    return rgbaSet3b(
-        color1.red < color2.red ? 0 : color1.red - color2.red,
-        color1.green < color2.green ? 0 : color1.green - color2.green,
-        color1.blue < color2.blue ? 0 : color1.blue - color2.blue
+RGBColor_ST rgbSub (RGBColor_ST self, RGBColor_ST color) {
+    return rgbSet(
+        self.red < color.red ? 0 : self.red - color.red,
+        self.green < color.green ? 0 : self.green - color.green,
+        self.blue < color.blue ? 0 : self.blue - color.blue
     );
 }
 
-unsigned char rgbaGetAverage (RGBAColor_ST color) {
-    return (color.red + color.green + color.blue) / 3;
+unsigned char rgbGetAverage (RGBColor_ST self) {
+    return (self.red + self.green + self.blue) / 3;
 }
 
-RGBAColor_ST rgbaGetAverageColor (const CLSTList colors) {
-    int i, length = clstGetLength(colors);
+RGBColor_ST rgbGetAverageColor (const LSTList colors) {
+    int i, length = lstGetLength(colors);
     double red = 0.0, green = 0.0, blue = 0.0;
-    RGBAColor_ST* current_color_p = NULL;
+    RGBColor_ST* curr_color_p = NULL;
 
     for (i = 0; i < length; i ++) {
-        current_color_p = (RGBAColor_ST*) clstLookElement(colors, i);
-        red += current_color_p->red;
-        green += current_color_p->green;
-        blue += current_color_p->blue;
+        curr_color_p = (RGBColor_ST*) lstLookElement(colors, i);
+        red += curr_color_p->red;
+        green += curr_color_p->green;
+        blue += curr_color_p->blue;
     }
 
-    return rgbaSet3b(red / length, green / length, blue / length);
+    return rgbSet(red / length, green / length, blue / length);
 }
 
-int rgbaIsEqual (RGBAColor_ST color1, RGBAColor_ST color2) {
+int rgbIsEqual (RGBColor_ST self, RGBColor_ST color) {
     return (
-        color1.red == color2.red &&
-        color1.green == color2.green &&
-        color1.blue == color2.blue
+        self.red == color.red &&
+        self.green == color.green &&
+        self.blue == color.blue
     );
 }
 
-int rgbaIsPresente (RGBAColor_ST color, const CLSTList colors) {
+int rgbIsPresente (RGBColor_ST self, const LSTList colors) {
     int i;
 
-    for (i = 0; i < clstGetLength(colors); i ++)
-        if (rgbaIsEqual(color, * (RGBAColor_ST*) clstLookElement(colors, i)))
+    for (i = 0; i < lstGetLength(colors); i ++)
+        if (rgbIsEqual(self, * (RGBColor_ST*) lstLookElement(colors, i)))
             return 1;
 
     return 0;
@@ -184,51 +169,47 @@ int rgbaIsPresente (RGBAColor_ST color, const CLSTList colors) {
 
 /* ========================================================================== */
 
-CLSTList rgbaGetBasicColors () {
+LSTList rgbGetBasicColors () {
     int i;
-    static RGBAColor_ST basic_colors_vc[] = {
-        { 000, 000, 000, 255 }, { 255, 255, 255, 255 },
-        { 255, 000, 000, 255 }, { 000, 255, 000, 255 },
-        { 000, 000, 255, 255 }, { 255, 000, 255, 255 },
-        { 000, 255, 255, 255 }, { 255, 255, 000, 255 }
+    static RGBColor_ST basic_colors_vc[] = {
+        { 000, 000, 000 }, { 255, 255, 255 },
+        { 255, 000, 000 }, { 000, 255, 000 },
+        { 000, 000, 255 }, { 255, 000, 255 },
+        { 000, 255, 255 }, { 255, 255, 000 }
     };
-    RGBAColor_ST* current_color_p;
-    CLSTList basic_colors = clstNew();
+    RGBColor_ST* curr_color_p;
+    LSTList basic_colors = lstNew();
 
     if (basic_colors)
         for (i = 0; i < 8; i ++) {
-            current_color_p = rgbaAlloc(basic_colors_vc[i]);
+            curr_color_p = rgbAlloc(basic_colors_vc[i]);
 
-            if (current_color_p)
-                clstAppend(basic_colors, current_color_p);
+            if (curr_color_p) lstAppend(basic_colors, curr_color_p);
             else {
-                current_error = RGBA_NOT_ENOUGH_SPACE;
-                clstDestroy(&basic_colors);
+                rgb_current_error = RGB_NOT_ENOUGH_SPACE;
+                lstDestroy(&basic_colors);
 
                 return NULL;
             }
         }
-    else current_error = RGBA_NOT_ENOUGH_SPACE;
+    else rgb_current_error = RGB_NOT_ENOUGH_SPACE;
 
     return basic_colors;
 }
 
 /* ========================================================================== */
 
-void rgbaPrint (RGBAColor_ST color) {
-    printf(
-        "(%03i %03i %03i %03i)\n",
-        color.red, color.green, color.blue, color.alpha
-    );
+void rgbPrint (RGBColor_ST self) {
+    printf("(%03i %03i %03i)\n", self.red, self.green, self.blue);
 }
 
 
-void rgbaPrintColorSet (const CLSTList colors) {
+void rgbPrintColorSet (const LSTList colors) {
     int i;
 
-    for (i = 0; i < clstGetLength(colors); i ++) {
+    for (i = 0; i < lstGetLength(colors); i ++) {
         printf("%i: ", i);
-        rgbaPrint(* (RGBAColor_ST*) clstLookElement(colors, i));
+        rgbPrint(* (RGBColor_ST*) lstLookElement(colors, i));
     }
 }
 

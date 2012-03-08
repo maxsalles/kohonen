@@ -86,7 +86,7 @@ void lstClear (LSTList self) {
     else lst_current_error = LST_INVALID_ARGUMENT;
 }
 
-void clstDestroy (LSTList* self_p) {
+void lstDestroy (LSTList* self_p) {
     if (self_p) {
         lstClear(*self_p);
         free(*self_p);

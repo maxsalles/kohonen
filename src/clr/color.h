@@ -1,94 +1,82 @@
 /*
 **
 ** $ Herond Robaina Salles, Rafael Motta de Carvalho
-** prefix: rgba
+** Prefix: rgb
 */
 
-#ifndef _RGBA_LIB
-#define _RGBA_LIB
+#ifndef _RGB_LIB
+#define _RGB_LIB
 
 #include <errno.h>
 
-#include "../../../ctollkit/src/list/list.h"
+#include "../lst/list.h"
 
 /* ========================================================================== */
 
-#define RGBA_BLACK      (rgbaSet3b(000, 000, 000))
-#define RGBA_WHITE      (rgbaSet3b(255, 255, 255))
-#define RGBA_RED        (rgbaSet3b(255, 000, 000))
-#define RGBA_GREEN      (rgbaSet3b(000, 255, 000))
-#define RGBA_BLUE       (rgbaSet3b(000, 000, 255))
-#define RGBA_MAGENTA    (rgbaSet3b(255, 000, 255))
-#define RGBA_CIAN       (rgbaSet3b(000, 255, 255))
-#define RGBA_YELLOW     (rgbaSet3b(255, 255, 000))
+#define RGB_BLACK      (rgbSet(000, 000, 000))
+#define RGB_WHITE      (rgbSet(255, 255, 255))
+#define RGB_RED        (rgbSet(255, 000, 000))
+#define RGB_GREEN      (rgbSet(000, 255, 000))
+#define RGB_BLUE       (rgbSet(000, 000, 255))
+#define RGB_MAGENTA    (rgbSet(255, 000, 255))
+#define RGB_CIAN       (rgbSet(000, 255, 255))
+#define RGB_YELLOW     (rgbSet(255, 255, 000))
 
 /* ========================================================================== */
 
-enum RGBAErros_EN {
-    RGBA_NO_ERROR = 0,
-    RGBA_NOT_ENOUGH_SPACE = ENOMEM,
-    RGBA_INVALID_ARGUMENT = EINVAL
+enum RGBErros_EN {
+    RGB_NO_ERROR = 0,
+    RGB_NOT_ENOUGH_SPACE = ENOMEM,
+    RGB_INVALID_ARGUMENT = EINVAL
 };
 
 typedef struct {
     unsigned char red;
     unsigned char green;
     unsigned char blue;
-    unsigned char alpha;
-} RGBAColor_ST;
+} RGBColor_ST;
 
 /* ========================================================================== */
 
-RGBAColor_ST rgbaSet3b (
-    unsigned char red,
-    unsigned char green,
-    unsigned char blue
+RGBColor_ST rgbSet (unsigned char red, unsigned char green, unsigned char blue);
+
+RGBColor_ST* rgbAlloc (RGBColor_ST self);
+
+double rgbGetDiameter (RGBColor_ST self);
+
+double rgbGetDistance (RGBColor_ST self, RGBColor_ST color);
+
+RGBColor_ST rgbaGetCloser (RGBColor_ST color, const LSTList colors);
+
+double rgbGetSimilarityOnColorsSet (
+    RGBColor_ST self,
+    const LSTList colors,
+    RGBColor_ST* color_p
 );
 
-RGBAColor_ST rgbaSet4b (
-    unsigned char red,
-    unsigned char green,
-    unsigned char blue,
-    unsigned char alpha
-);
+RGBColor_ST rgbBlend (RGBColor_ST self, RGBColor_ST color);
 
-RGBAColor_ST* rgbaAlloc (RGBAColor_ST color);
+RGBColor_ST rgbSum (RGBColor_ST self, RGBColor_ST color);
 
-double rgbaGetDiameter (RGBAColor_ST color);
+RGBColor_ST rgbSub (RGBColor_ST self, RGBColor_ST color);
 
-double rgbaGetDistance (RGBAColor_ST color1, RGBAColor_ST color2);
+unsigned char rgbGetAverage (RGBColor_ST self);
 
-RGBAColor_ST rgbaGetCloser (RGBAColor_ST color, const CLSTList colors);
+RGBColor_ST rgbGetAverageColor (const LSTList colors);
 
-double rgbaGetSimilarityOnColorsSet (
-    RGBAColor_ST color,
-    const CLSTList colors,
-    RGBAColor_ST* color_p
-);
+int rgbIsEqual (RGBColor_ST self, RGBColor_ST color);
 
-RGBAColor_ST rgbaBlend (RGBAColor_ST color1, RGBAColor_ST color2);
-
-RGBAColor_ST rgbaSum (RGBAColor_ST color1, RGBAColor_ST color2);
-
-RGBAColor_ST rgbaSub (RGBAColor_ST color1, RGBAColor_ST color2);
-
-unsigned char rgbaGetAverage (RGBAColor_ST color);
-
-RGBAColor_ST rgbaGetAverageColor (const CLSTList colors);
-
-int rgbaIsEqual (RGBAColor_ST color1, RGBAColor_ST color2);
-
-int rgbaIsPresente (RGBAColor_ST color, const CLSTList colors);
+int rgbIsPresente (RGBColor_ST self, const LSTList colors);
 
 /* ========================================================================== */
 
-CLSTList rgbaGetBasicColors (void);
+LSTList rgbGetBasicColors (void);
 
 /* ========================================================================== */
 
-void rgbaPrint (RGBAColor_ST color);
+void rgbPrint (RGBColor_ST self);
 
-void rgbaPrintColorSet (const CLSTList colors);
+void rgbPrintColorSet (const LSTList colors);
 
 #endif
 
