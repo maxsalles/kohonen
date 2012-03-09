@@ -24,8 +24,8 @@ void main_display (void) {
 }
 
 int main (int argc, char* argv[]) {
-    int* histogram, threshold;
-    image = imgLoadJPG("images/spider1.jpg");
+    int threshold;
+    image = imgLoadJPG("images/fuck_you.jpg");
 
     if (image) {
         glutInit(&argc, argv);
@@ -33,8 +33,7 @@ int main (int argc, char* argv[]) {
         glutInitDisplayMode(GLUT_DEPTH | GLUT_RGBA | GLUT_DOUBLE);
         glutInitWindowSize(imgGetWidth(image), imgGetHeight(image));
 
-        histogram = imgGetHistogram(image, IMG_MEAN_CHANNEL);
-        threshold = imgGetBHThreshold(histogram);
+        threshold = imgGetOtsuThreshold(image);
 
         imgThresholded(image, threshold);
 

@@ -89,7 +89,9 @@ void imgDesaturate (IMGImage self);
 
 void imgQuantize (IMGImage self, const LSTList colors);
 
-unsigned char imgGetBHThreshold (int* histogram);
+unsigned char imgGetBHThreshold (const IMGImage self);
+
+unsigned char imgGetOtsuThreshold (const IMGImage self);
 
 void imgThresholded (IMGImage self, unsigned char threshold);
 
