@@ -1,20 +1,51 @@
 #include <stdio.h>
 
-
-#include "lst/list.h"
-#include "khn/kohonen.h"
 #include "img/image.h"
+#include "GL/glut.h"
 
-int main (void) {
-    double input[] = { 2.0, 2.0 };
-    KHNNet net = khnNew(2, 2, 2);
-    KHNTraining training = khnNewTraining(net, 0.5, 0.5, 4.0);
+IMGImage image = NULL;
 
-    khnPrint(net);
+void init (void) {
+    glViewport(0, 0, imgGetWidth(image), imgGetHeight(image));
 
-    khnTrainingIterate(training, input);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, imgGetWidth(image), 0, imgGetHeight(image));
+    glMatrixMode(GL_MODELVIEW);
+}
 
-    khnPrint(net);
+void main_display (void) {
+    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    if (image) imgDraw(image, 0, 0);
+
+    glutSwapBuffers();
+}
+
+int main (int argc, char* argv[]) {
+    int* histogram, threshold;
+    image = imgLoadJPG("images/spider1.jpg");
+
+    if (image) {
+        glutInit(&argc, argv);
+
+        glutInitDisplayMode(GLUT_DEPTH | GLUT_RGBA | GLUT_DOUBLE);
+        glutInitWindowSize(imgGetWidth(image), imgGetHeight(image));
+
+        histogram = imgGetHistogram(image, IMG_MEAN_CHANNEL);
+        threshold = imgGetBHThreshold(histogram);
+
+        imgThresholded(image, threshold);
+
+        printf("%i\n", threshold);
+
+        glutCreateWindow("Image view");
+        glutDisplayFunc(main_display);
+
+        init();
+        glutMainLoop();
+    } else printf("Error opening the image!\n");
 
     return 0;
 }

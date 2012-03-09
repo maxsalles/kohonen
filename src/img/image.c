@@ -19,8 +19,6 @@
 
 static int img_current_error = IMG_NO_ERROR;
 
-static int IMG_X_FILTER = 0;
-static int IMG_Y_FILTER = 0;
 static const int IMG_NUM_COMPONENTS = 3;
 static enum IMGComponents_EN { IMG_RED = 0, IMG_GREEN = 1, IMG_BLUE = 2 };
 
@@ -105,65 +103,6 @@ static unsigned char* getPixel (const IMGImage image, unsigned x, unsigned y) {
     img_current_error = IMG_INVALID_ARGUMENT;
 
     return NULL;
-}
-
-/*
-** Fielters
-*/
-
-static double** getGaussianMatrix (int width, int height) {
-    int i, j, x, y;
-    const double SIGMA_2 = 2.8 * 2.8;
-    static double* matrix = NULL;
-    static double** matrix_return = NULL;
-
-    if (!matrix) matrix = (double*) malloc(sizeof(double) * width * height);
-    if (!matrix_return) matrix_return = (double**) malloc(
-        sizeof(double) * height
-    );
-
-    if (matrix && matrix_return) {
-        for (i = 0; i < height; i ++) matrix_return[i] = matrix + (i * width);
-
-        for (i = 0, x = -1 * width / 2; i < width; i ++, x ++)
-            for (j = 0, y = -1 * height / 2; j < height; j ++, y ++)
-                matrix_return[i][j] = (1.0 / (2.0 * M_PI * SIGMA_2)) * pow(
-                    M_E, -1.0 * (double) (x * x + y * y) / (2.0 * SIGMA_2)
-                );
-    } else img_current_error = IMG_NOT_ENOUGH_SPACE;
-
-    return matrix_return;
-}
-
-static double** getSobelFilter (int filter) {
-    int i, j;
-    static double* matrix = NULL;
-    static double** matrix_return = NULL;
-    static const double SOBEL_X_MATRIX[3][3] = {
-        { -1.0, -2.0, -1.0 },
-        {  0.0,  0.0,  0.0 },
-        {  1.0,  2.0,  1.0 }
-    };
-    static const double SOBEL_Y_MATRIX[3][3] = {
-        { -1.0,  0.0, 1.0 },
-        { -2.0,  0.0, 2.0 },
-        { -1.0,  0.0, 1.0 }
-    };
-
-    if (!matrix) matrix = (double*) malloc(sizeof(double) * 3 * 3);
-
-    if (!matrix_return) matrix_return = (double**) malloc(sizeof(double) * 3);
-
-    if (matrix && matrix_return) {
-        for (i = 0; i < 3; i ++) matrix_return[i] = matrix + (i * 3);
-
-        for (i = 0; i < 3; i ++)
-            for (j = 0; j < 3; j ++)
-                matrix_return[i][j] = filter == IMG_X_FILTER ?
-                    SOBEL_X_MATRIX[i][j] : SOBEL_Y_MATRIX[i][j];
-    } else img_current_error = IMG_NOT_ENOUGH_SPACE;
-
-    return matrix_return;
 }
 
 /*
@@ -381,6 +320,50 @@ int imgGetNumPixels (const IMGImage self) {
     return -1;
 }
 
+int* imgGetHistogram (const IMGImage self, int mode) {
+    if (self && self->data) {
+        int i, j;
+        int* histogram = (int*) malloc(sizeof(int) * 256);
+
+        if (histogram) {
+            for (i = 0; i < 256; i ++) histogram[i] = 0;
+
+            switch (mode) {
+            case IMG_RED_CHANNEL:
+                for (i = 0; i < self->width; i ++)
+                    for (j = 0; j < self->height; j ++)
+                        histogram[imgGetColorPixel(self, i, j).red] ++;
+
+                break;
+            case IMG_GREEN_CHANNEL:
+                for (i = 0; i < self->width; i ++)
+                    for (j = 0; j < self->height; j ++)
+                        histogram[imgGetColorPixel(self, i, j).green] ++;
+
+                break;
+            case IMG_BLUE_CHANNEL:
+                for (i = 0; i < self->width; i ++)
+                    for (j = 0; j < self->height; j ++)
+                        histogram[imgGetColorPixel(self, i, j).blue] ++;
+
+                break;
+            case IMG_MEAN_CHANNEL:
+                for (i = 0; i < self->width; i ++)
+                    for (j = 0; j < self->height; j ++)
+                        histogram[
+                            rgbGetAverage(imgGetColorPixel(self, i, j))
+                        ] ++;
+
+                break;
+            }
+
+            return histogram;
+        } img_current_error = IMG_NOT_ENOUGH_SPACE;
+    } else img_current_error = IMG_INVALID_ARGUMENT;
+
+    return NULL;
+}
+
 LSTList imgGetJaxColors (
     const IMGImage self,
     unsigned jump_size,
@@ -506,78 +489,80 @@ void imgQuantize (IMGImage self, const LSTList colors) {
         }
 }
 
-void imgThresholded (IMGImage self, double threshold) {
+unsigned char imgGetBHThreshold (int* histogram) {
+    int l_limit = 0,  r_limit = 172;
+    int l_weight = 0, r_weight = 0;
+    int i, threshold = (r_limit + l_limit) / 2;
+
+/*    for (i = 0; i < 256; i ++) printf("(%i %i)\n", i, histogram[i]);*/
+
+    for (i = l_limit; i <= threshold; i ++) l_weight += histogram[i];
+    for (i = threshold + 1; i < r_limit + 1; i ++) r_weight += histogram[i];
+
+    while (l_limit <= r_limit) {
+        printf("<<(%i %i %i) => %i %i >>\n", l_limit, threshold, r_limit, l_weight, r_weight);
+
+        if (r_weight > l_weight) {
+            r_weight -= histogram[r_limit --];
+
+            if ((r_limit + l_limit) / 2 < threshold) {
+                r_weight += histogram[threshold];
+                l_weight -= histogram[threshold --];
+            }
+        } else {
+            l_weight -= histogram[l_limit ++];
+
+            if ((r_limit + l_limit) / 2 > threshold) {
+                l_weight += histogram[threshold + 1];
+                r_weight -= histogram[threshold + 1];
+                threshold ++;
+            }
+        }
+    }
+
+    return threshold;
+/*        int i, i_m, w_l = 0, w_r = 0, i_s = 0, i_e = 172;*/
+
+/*       i_m = (int)((i_s + i_e) / 2.0f); // Base da balança I_m*/
+
+/*       for (i = i_s; i <= i_m; i ++) w_l += histogram[i];*/
+/*       for (i = i_m + 1; i <  i_e + 1; i ++) w_r += histogram[i];*/
+
+/*       while (i_s <= i_e) {*/
+/*               printf("<<(%i %i %i) => %i %i >>\n", i_s, i_m, i_e, w_l, w_r);*/
+/*           if (w_r > w_l) { // mais peso à direita*/
+/*               w_r -= histogram[i_e--];*/
+/*               if (((i_s + i_e) / 2) < i_m) {*/
+/*                   w_r += histogram[i_m];*/
+/*                   w_l -= histogram[i_m--];*/
+/*               }*/
+/*           } else if (w_l >= w_r) { // mais peso à esquerda*/
+/*               w_l -= histogram[i_s++];*/
+/*               if (((i_s + i_e) / 2) > i_m) {*/
+/*                   w_l += histogram[i_m + 1];*/
+/*                   w_r -= histogram[i_m + 1];*/
+/*                   i_m++;*/
+/*               }*/
+/*           }*/
+/*       }*/
+/*       return i_m;*/
+}
+
+void imgThresholded (IMGImage self, unsigned char threshold) {
     int i, j;
     RGBColor_ST curr_color;
 
-    if (self && self->data && threshold >= 0.0 && threshold <= 1.0) {
+    if (self && self->data) {
         for (i = 0; i < self->width; i ++)
             for (j = 0; j < self->height; j ++) {
                 curr_color = imgGetColorPixel(self, i, j);
 
-                if ((double) rgbGetAverage(curr_color) / 255.0 < threshold)
+                if (rgbGetAverage(curr_color) < threshold)
                     imgSetColorPixel(self, i, j, RGB_WHITE);
                 else
                     imgSetColorPixel(self, i, j, RGB_BLACK);
             }
     } else img_current_error = IMG_INVALID_ARGUMENT;
-}
-
-void imgApplyGaussianBlur (IMGImage self, unsigned width, unsigned height) {
-    unsigned i, j;
-    double** gaussian_matix = getGaussianMatrix(width, height);
-    IMGImage sector = NULL, image_buffer = NULL;
-
-    if (self && self->data && gaussian_matix && *gaussian_matix) {
-        image_buffer = imgAlloc(self->width, self->height, RGB_BLACK);
-
-        for (i = 0; i < self->width; i ++)
-            for (j = 0; j < self->height; j ++) {
-                sector = imgGetSector(
-                    self, i - width / 2, j - height / 2, width, height
-                );
-                imgSetColorPixel(
-                    image_buffer, i, j,
-                    imgApplyConvolutionFilter(sector, gaussian_matix)
-                );
-                imgDestroy(&sector);
-            }
-    } else img_current_error = IMG_INVALID_ARGUMENT;
-
-    free(*gaussian_matix);
-    free(gaussian_matix);
-    self->data = image_buffer->data;
-}
-
-void imgApplySobelEdgeDetection (IMGImage self) {
-    unsigned i, j;
-    double** sobel_filter_x = getSobelFilter(IMG_X_FILTER);
-    double** sobel_filter_y = getSobelFilter(IMG_Y_FILTER);
-    IMGImage sector = NULL, image_buffer = NULL;
-    RGBColor_ST curr_color;
-
-    if (self && self->data && sobel_filter_x && *sobel_filter_x &&
-        sobel_filter_y && *sobel_filter_y) {
-        image_buffer = imgAlloc(self->width, self->height, RGB_BLACK);
-
-        if (image_buffer) {
-            for (i = 0; i < self->width; i ++)
-                for (j = 0; j < self->height; j ++) {
-                    sector = imgGetSector(self, i - 1, j - 1, 3, 3);
-                    curr_color = rgbSum(
-                        imgApplyConvolutionFilter(sector, sobel_filter_x),
-                        imgApplyConvolutionFilter(sector, sobel_filter_y)
-                    );
-                    imgSetColorPixel(image_buffer, i, j, curr_color);
-                }
-        } else img_current_error = IMG_NOT_ENOUGH_SPACE;
-
-        free(*sobel_filter_x);
-        free(sobel_filter_x);
-        free(*sobel_filter_y);
-        free(sobel_filter_y);
-        self->data = image_buffer->data;
-    }
 }
 
 RGBColor_ST imgApplyConvolutionFilter (const IMGImage self, double** filter) {

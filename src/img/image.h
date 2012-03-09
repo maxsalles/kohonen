@@ -22,6 +22,11 @@ enum IMGErros_EN {
     IMG_INVALID_ARGUMENT = EINVAL
 };
 
+enum IMGHistogramModes_EN {
+    IMG_RED_CHANNEL = 0,  IMG_GREEN_CHANNEL = 1,
+    IMG_BLUE_CHANNEL = 2, IMG_MEAN_CHANNEL = 3
+};
+
 enum IMGRescalingMethods_EN {
     IMG_BICUBIC = 0
 };
@@ -57,6 +62,8 @@ int imgGetHeight (const IMGImage self);
 
 int imgGetNumPixels (const IMGImage self);
 
+int* imgGetHistogram (const IMGImage self, int mode);
+
 LSTList imgGetJaxColors (
     const IMGImage self,
     unsigned jump_size,
@@ -82,11 +89,9 @@ void imgDesaturate (IMGImage self);
 
 void imgQuantize (IMGImage self, const LSTList colors);
 
-void imgThresholded (IMGImage self, double threshold);
+unsigned char imgGetBHThreshold (int* histogram);
 
-void imgApplyGaussianBlur (IMGImage self, unsigned width, unsigned height);
-
-void imgApplySobelEdgeDetection (IMGImage self);
+void imgThresholded (IMGImage self, unsigned char threshold);
 
 RGBColor_ST imgApplyConvolutionFilter (const IMGImage self, double** filter);
 

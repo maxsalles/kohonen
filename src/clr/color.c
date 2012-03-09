@@ -1,5 +1,4 @@
 /*
-**
 ** $ Herond Robaina Salles, Rafael Motta de Carvalho
 ** Prefix: rgb
 */
