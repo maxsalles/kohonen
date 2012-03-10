@@ -202,7 +202,7 @@ double similarity (LSTList colors1, LSTList colors2) {
 ** Moments
 */
 
-double nNorm (const IMGImage self, unsigned p, unsigned q) {
+static double moment (const IMGImage self, unsigned p, unsigned q) {
     int i, j;
     unsigned char curr_avrg;
     double sum_f = 0.0, u_pq = 0.0, i_t = 0.0, j_t = 0.0;
@@ -222,13 +222,16 @@ double nNorm (const IMGImage self, unsigned p, unsigned q) {
     for (i = 0; i < imgGetWidth(self); i ++)
         for (j = 0; j < imgGetHeight(self); j ++) {
             curr_avrg = rgbGetAverage(imgGetColorPixel(self, i, j));
-            u_pq += pow(i - i_p, (float) p) * pow(j - j_p, (float) q) *
+            u_pq += pow(i - i_t, (float) p) * pow(j - j_t, (float) q) *
                 curr_avrg;
         }
 
-    u_pq /= sum_f;
-
     return u_pq;
+}
+
+static double mNorm (const IMGImage self, unsigned p, unsigned q) {
+    return moment(self, p, q) /
+        pow(moment(self, 0, 0), 1.0 + (float) (p + q) / 2.0);
 }
 
 /* ========================================================================== */
@@ -509,24 +512,25 @@ unsigned char imgGetBHThreshold (const IMGImage self) {
 double* imgGetHuMoments (const IMGImage self) {
     double* moments_return = (double*) malloc(sizeof(double) * 7);
     double n20 = mNorm(self, 2, 0), n02 = mNorm(self, 0, 2),
-            n11 = nNorm(self, 1, 1), n30 = nNorm(self, 3, 0),
-            n12 = nNorm(self, 1, 2), n21 = nNorm(self, 2, 1),
-            n03 = nNorm(self, 0, 3);
+           n11 = mNorm(self, 1, 1),
+           n30 = mNorm(self, 3, 0), n12 = mNorm(self, 1, 2),
+           n21 = mNorm(self, 2, 1), n03 = mNorm(self, 0, 3);
 
     moments_return[0] = n20 + n02;
-    moments_return[1] = pow(n20 + n02, 2.0) + 4.0 * pow(n11, 2.0);
-    moments_return[2] = pow(n30 - n12, 2.0) + pow(3.0 * n21 - n03, 2.0);
-    moments_return[3] = pow(n30 + n12, 2.0) + pow(3.0 * n21 + n03, 2.0);
+    moments_return[1] = pow(n20 - n02, 2.0) + 4.0 * pow(n11, 2.0);
+    moments_return[2] = pow(n30 - 3.0 * n12, 2.0) + pow(3.0 * n21 - n03, 2.0);
+    moments_return[3] = pow(n30 + n12, 2.0) + pow(n21 + n03, 2.0);
     moments_return[4] = (n30 - 3.0 * n12) * (n30 + n12) *
         (pow(n30 + n12, 2.0) - 3.0 * pow(n21 + n03, 2.0)) +
         (3.0 * n21 - n03) * (n21 + n03) *
         (3.0 * pow(n30 + n12, 2.0) - pow(n21 + n03, 2.0));
-    moments_return[5] = (n20 + n02) *
+    moments_return[5] = (n20 - n02) *
         (pow(n30 + n12, 2.0) - pow(n21 + n03, 2.0)) +
-        4.0 * n11 * (n30 - n10) * (n21 + n03);
-    moments_return[6] = (3.0 * n21 - n30) * (n30 + n12) *
-        (pow(n30 + n12, 2.0) - 3.0 * pow(n21 + n03, 2.0)) +
-        (3.0 * n12 - n03) * (n21 + n03) *
+        4.0 * n11 * (n30 + n12) * (n21 + n03);
+
+    moments_return[6] = (3.0 * n21 - n03) * (n30 + n12) *
+        (pow(n30 + n12, 2.0) - 3.0 * pow(n21 + n03, 2.0)) -
+        (n30 - 3.0 * n12) * (n21 + n03) *
         (3.0 * pow(n30 + n12, 2.0) - pow(n21 + n03, 2.0));
 
     return moments_return;
@@ -622,9 +626,9 @@ void imgThresholded (IMGImage self, unsigned char threshold) {
                 curr_color = imgGetColorPixel(self, i, j);
 
                 if (rgbGetAverage(curr_color) < threshold)
-                    imgSetColorPixel(self, i, j, RGB_WHITE);
-                else
                     imgSetColorPixel(self, i, j, RGB_BLACK);
+                else
+                    imgSetColorPixel(self, i, j, RGB_WHITE);
             }
     } else img_current_error = IMG_INVALID_ARGUMENT;
 }

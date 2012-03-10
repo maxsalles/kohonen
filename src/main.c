@@ -24,20 +24,13 @@ void main_display (void) {
 }
 
 int main (int argc, char* argv[]) {
-    int threshold;
-    image = imgLoadJPG("images/fuck_you.jpg");
+    image = imgLoadJPG("images/hand1.jpg");
 
     if (image) {
         glutInit(&argc, argv);
 
         glutInitDisplayMode(GLUT_DEPTH | GLUT_RGBA | GLUT_DOUBLE);
         glutInitWindowSize(imgGetWidth(image), imgGetHeight(image));
-
-        threshold = imgGetOtsuThreshold(image);
-
-        imgThresholded(image, threshold);
-
-        printf("%i\n", threshold);
 
         glutCreateWindow("Image view");
         glutDisplayFunc(main_display);
