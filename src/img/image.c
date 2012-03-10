@@ -198,6 +198,39 @@ double similarity (LSTList colors1, LSTList colors2) {
     return similarity_average / length;
 }
 
+/*
+** Moments
+*/
+
+double nNorm (const IMGImage self, unsigned p, unsigned q) {
+    int i, j;
+    unsigned char curr_avrg;
+    double sum_f = 0.0, u_pq = 0.0, i_t = 0.0, j_t = 0.0;
+
+    for (i = 0; i < imgGetWidth(self); i ++)
+        for (j = 0; j < imgGetHeight(self); j ++) {
+            curr_avrg = rgbGetAverage(imgGetColorPixel(self, i, j));
+
+            sum_f += (double) curr_avrg;
+              i_t += (double) i * curr_avrg;
+              j_t += (double) j * curr_avrg;
+        }
+
+    i_t /= sum_f;
+    j_t /= sum_f;
+
+    for (i = 0; i < imgGetWidth(self); i ++)
+        for (j = 0; j < imgGetHeight(self); j ++) {
+            curr_avrg = rgbGetAverage(imgGetColorPixel(self, i, j));
+            u_pq += pow(i - i_p, (float) p) * pow(j - j_p, (float) q) *
+                curr_avrg;
+        }
+
+    u_pq /= sum_f;
+
+    return u_pq;
+}
+
 /* ========================================================================== */
 
 IMGImage imgLoadJPG (const char* file_name) {
@@ -442,6 +475,96 @@ IMGImage imgGetSector (
     return sector;
 }
 
+unsigned char imgGetBHThreshold (const IMGImage self) {
+    int* histogram = imgGetHistogram(self, IMG_MEAN_CHANNEL);
+    int l_limit = 0,  r_limit = 172;
+    int l_weight = 0, r_weight = 0;
+    int i, threshold = (r_limit + l_limit) / 2;
+
+    for (i = l_limit; i <= threshold; i ++) l_weight += histogram[i];
+    for (i = threshold + 1; i < r_limit + 1; i ++) r_weight += histogram[i];
+
+    while (l_limit <= r_limit) {
+        if (r_weight > l_weight) {
+            r_weight -= histogram[r_limit --];
+
+            if ((r_limit + l_limit) / 2 < threshold) {
+                r_weight += histogram[threshold];
+                l_weight -= histogram[threshold --];
+            }
+        } else {
+            l_weight -= histogram[l_limit ++];
+
+            if ((r_limit + l_limit) / 2 > threshold) {
+                l_weight += histogram[threshold + 1];
+                r_weight -= histogram[threshold + 1];
+                threshold ++;
+            }
+        }
+    }
+
+    return threshold;
+}
+
+double* imgGetHuMoments (const IMGImage self) {
+    double* moments_return = (double*) malloc(sizeof(double) * 7);
+    double n20 = mNorm(self, 2, 0), n02 = mNorm(self, 0, 2),
+            n11 = nNorm(self, 1, 1), n30 = nNorm(self, 3, 0),
+            n12 = nNorm(self, 1, 2), n21 = nNorm(self, 2, 1),
+            n03 = nNorm(self, 0, 3);
+
+    moments_return[0] = n20 + n02;
+    moments_return[1] = pow(n20 + n02, 2.0) + 4.0 * pow(n11, 2.0);
+    moments_return[2] = pow(n30 - n12, 2.0) + pow(3.0 * n21 - n03, 2.0);
+    moments_return[3] = pow(n30 + n12, 2.0) + pow(3.0 * n21 + n03, 2.0);
+    moments_return[4] = (n30 - 3.0 * n12) * (n30 + n12) *
+        (pow(n30 + n12, 2.0) - 3.0 * pow(n21 + n03, 2.0)) +
+        (3.0 * n21 - n03) * (n21 + n03) *
+        (3.0 * pow(n30 + n12, 2.0) - pow(n21 + n03, 2.0));
+    moments_return[5] = (n20 + n02) *
+        (pow(n30 + n12, 2.0) - pow(n21 + n03, 2.0)) +
+        4.0 * n11 * (n30 - n10) * (n21 + n03);
+    moments_return[6] = (3.0 * n21 - n30) * (n30 + n12) *
+        (pow(n30 + n12, 2.0) - 3.0 * pow(n21 + n03, 2.0)) +
+        (3.0 * n12 - n03) * (n21 + n03) *
+        (3.0 * pow(n30 + n12, 2.0) - pow(n21 + n03, 2.0));
+
+    return moments_return;
+}
+
+unsigned char imgGetOtsuThreshold (const IMGImage self) {
+    int* histogram = imgGetHistogram(self, IMG_MEAN_CHANNEL);
+    int i, w_b = 0, w_f = 0, threshold = 0, total = imgGetNumPixels(self);
+    float sum = 0.0, sum_b = 0.0, var_max = 0, m_b, m_f, var_between;
+
+    for (i = 0 ; i < 256; i ++) sum += i * histogram[i];
+
+    for (i = 0; i < 256; i ++) {
+        w_b += histogram[i];
+
+        if (! w_b) continue;
+
+        w_f = total - w_b;
+
+        if (! w_f) break;
+
+        sum_b += (float) (i * histogram[i]);
+        m_b = sum_b / w_b;
+        m_f = (sum - sum_b) / w_f;
+
+        var_between = (float) w_b * (float) w_f * (m_b - m_f) * (m_b - m_f);
+
+        if (var_between > var_max) {
+            var_max = var_between;
+            threshold = i;
+        }
+    }
+
+    free(histogram);
+
+    return threshold;
+}
+
 void imgSubtract (IMGImage self, const IMGImage other_image) {
     int i, j;
     int width = self->width < other_image->width ?
@@ -487,70 +610,6 @@ void imgQuantize (IMGImage self, const LSTList colors) {
             rgbGetSimilarityOnColorsSet(curr_color, colors, &color);
             imgSetColorPixel(self, i, j, color);
         }
-}
-
-unsigned char imgGetBHThreshold (const IMGImage self) {
-    int* histogram = imgGetHistogram(self, IMG_MEAN_CHANNEL);
-    int l_limit = 0,  r_limit = 172;
-    int l_weight = 0, r_weight = 0;
-    int i, threshold = (r_limit + l_limit) / 2;
-
-    for (i = l_limit; i <= threshold; i ++) l_weight += histogram[i];
-    for (i = threshold + 1; i < r_limit + 1; i ++) r_weight += histogram[i];
-
-    while (l_limit <= r_limit) {
-        if (r_weight > l_weight) {
-            r_weight -= histogram[r_limit --];
-
-            if ((r_limit + l_limit) / 2 < threshold) {
-                r_weight += histogram[threshold];
-                l_weight -= histogram[threshold --];
-            }
-        } else {
-            l_weight -= histogram[l_limit ++];
-
-            if ((r_limit + l_limit) / 2 > threshold) {
-                l_weight += histogram[threshold + 1];
-                r_weight -= histogram[threshold + 1];
-                threshold ++;
-            }
-        }
-    }
-
-    return threshold;
-}
-
-unsigned char imgGetOtsuThreshold (const IMGImage self) {
-    int* histogram = imgGetHistogram(self, IMG_MEAN_CHANNEL);
-    int i, w_b = 0, w_f = 0, threshold = 0, total = imgGetNumPixels(self);
-    float sum = 0.0, sum_b = 0.0, var_max = 0, m_b, m_f, var_between;
-
-    for (i = 0 ; i < 256; i ++) sum += i * histogram[i];
-
-    for (i = 0; i < 256; i ++) {
-        w_b += histogram[i];
-
-        if (! w_b) continue;
-
-        w_f = total - w_b;
-
-        if (! w_f) break;
-
-        sum_b += (float) (i * histogram[i]);
-        m_b = sum_b / w_b;
-        m_f = (sum - sum_b) / w_f;
-
-        var_between = (float) w_b * (float) w_f * (m_b - m_f) * (m_b - m_f);
-
-        if (var_between > var_max) {
-            var_max = var_between;
-            threshold = i;
-        }
-    }
-
-    free(histogram);
-
-    return threshold;
 }
 
 void imgThresholded (IMGImage self, unsigned char threshold) {

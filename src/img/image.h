@@ -83,15 +83,17 @@ IMGImage imgGetSector (
     unsigned width, unsigned height
 );
 
+unsigned char imgGetBHThreshold (const IMGImage self);
+
+unsigned char imgGetOtsuThreshold (const IMGImage self);
+
+double* imgGetHuMoments (const IMGImage self);
+
 void imgSubtract (IMGImage self, const IMGImage other_image);
 
 void imgDesaturate (IMGImage self);
 
 void imgQuantize (IMGImage self, const LSTList colors);
-
-unsigned char imgGetBHThreshold (const IMGImage self);
-
-unsigned char imgGetOtsuThreshold (const IMGImage self);
 
 void imgThresholded (IMGImage self, unsigned char threshold);
 
