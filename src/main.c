@@ -24,7 +24,7 @@ void main_display (void) {
 }
 
 int main (int argc, char* argv[]) {
-    image = imgLoadJPG("images/hand1.jpg");
+    image = imgLoadJPG("images/beer1.jpg");
 
     if (image) {
         glutInit(&argc, argv);
