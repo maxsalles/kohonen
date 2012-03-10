@@ -24,13 +24,18 @@ void main_display (void) {
 }
 
 int main (int argc, char* argv[]) {
-    image = imgLoadJPG("images/beer1.jpg");
+    unsigned char threshold;
+    image = imgLoadJPG("images/beer4.jpg");
 
     if (image) {
         glutInit(&argc, argv);
 
         glutInitDisplayMode(GLUT_DEPTH | GLUT_RGBA | GLUT_DOUBLE);
         glutInitWindowSize(imgGetWidth(image), imgGetHeight(image));
+
+        threshold = imgGetOtsuThreshold(image);
+
+        imgThresholded(image, threshold);
 
         glutCreateWindow("Image view");
         glutDisplayFunc(main_display);
