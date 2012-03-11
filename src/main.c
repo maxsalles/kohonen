@@ -25,7 +25,7 @@ void main_display (void) {
 
 int main (int argc, char* argv[]) {
     unsigned char threshold;
-    image = imgLoadJPG("images/beer4.jpg");
+    image = imgLoadJPG("images/atlas5.jpg");
 
     if (image) {
         glutInit(&argc, argv);
